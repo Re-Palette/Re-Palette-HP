@@ -765,6 +765,126 @@
   .marquee-tube:nth-child(odd)  { transform: rotate(-6deg) translateY(2px); }
   .marquee-tube:nth-child(even) { transform: rotate(4deg) translateY(-2px); }
 
+
+  /* ══════════════════════════════
+     MOBILE OVERLAY (≤ 640px)
+  ══════════════════════════════ */
+  @media (max-width: 640px) {
+
+    /* Panel: stack vertically, color bar on top */
+    #sec-panel {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      overflow-y: auto;
+    }
+
+    /* Left color bar — compact horizontal strip */
+    #sec-left {
+      padding: 20px 20px 16px;
+      padding-top: 20px;
+      min-height: unset;
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+    #sec-left-label {
+      position: static;
+      font-size: 9px;
+      letter-spacing: .3em;
+      color: rgba(255,255,255,.8);
+    }
+    #sec-left-icon {
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
+    #sec-left-icon svg { width: 36px !important; height: 36px !important; }
+    #sec-left-eyebrow { display: none; }
+    #sec-left-title {
+      font-size: clamp(18px, 5vw, 26px);
+      margin-bottom: 0;
+      flex: 1;
+    }
+    #sec-big-num { display: none; }
+    #sec-paint-blob, #sec-paint-blob2 { display: none; }
+
+    /* Right content — full scroll */
+    #sec-right {
+      padding: 20px 18px 28px;
+      justify-content: flex-start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #sec-right::before { display: none; }
+
+    /* Text sizes */
+    .sec-eyebrow { font-size: 9px; letter-spacing: .3em; margin-bottom: 10px; }
+    .sec-title   { font-size: clamp(20px, 6vw, 28px); margin-bottom: 6px; }
+    .sec-divider { margin: 12px 0 16px; }
+    .sec-body    { font-size: 13px; line-height: 1.85; margin-bottom: 18px; }
+
+    /* Stat cards — 3 col on mobile stays but smaller */
+    .sec-stats {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 18px;
+    }
+    .stat-card { padding: 10px 6px; border-radius: 6px; }
+    .stat-num  { font-size: clamp(16px, 4vw, 22px); margin-bottom: 4px; }
+    .stat-label { font-size: 8px; letter-spacing: .1em; }
+
+    /* Flow steps */
+    .sec-flow { gap: 7px; margin-bottom: 18px; }
+    .flow-step { padding: 10px 10px; gap: 10px; border-radius: 6px; }
+    .flow-num  { font-size: 18px; width: 22px; }
+    .flow-text { font-size: 11px; line-height: 1.7; }
+    .flow-text strong { font-size: 10px; }
+
+    /* Ecosystem — stack to 1 col */
+    .sec-ecosystem {
+      grid-template-columns: 1fr;
+      gap: 7px;
+      margin-bottom: 18px;
+    }
+    .eco-node { padding: 12px 10px; border-radius: 8px; display: flex; align-items: center; gap: 12px; text-align: left; }
+    .eco-icon { margin-bottom: 0; flex-shrink: 0; }
+    .eco-icon svg { width: 26px !important; height: 26px !important; }
+    .eco-title { font-size: 11px; margin-bottom: 2px; }
+    .eco-desc  { font-size: 10px; line-height: 1.5; }
+
+    /* Quote */
+    .sec-quote { font-size: 13px; padding: 10px 12px; margin-bottom: 18px; }
+
+    /* CTA chips — stack to 1 col */
+    .sec-cta { gap: 7px; margin-bottom: 18px; }
+    .cta-chip { padding: 10px 12px; font-size: 11px; border-radius: 7px; }
+    .cta-chip-icon svg { width: 18px !important; height: 18px !important; }
+
+    /* Contact partner grid — 1 col */
+    .con-partner-grid {
+      grid-template-columns: 1fr;
+      gap: 7px;
+      margin-bottom: 16px;
+    }
+    .con-partner-card { padding: 12px 10px; display: flex; align-items: center; gap: 12px; text-align: left; border-radius: 8px; }
+    .con-partner-icon { margin-bottom: 0; flex-shrink: 0; }
+    .con-partner-icon svg { width: 26px !important; height: 26px !important; }
+    .con-partner-name { font-size: 11px; margin-bottom: 2px; }
+    .con-partner-desc { font-size: 10px; line-height: 1.5; }
+
+    .con-info-row { gap: 6px; margin-bottom: 14px; }
+    .con-info-item { padding: 9px 10px; font-size: 11px; border-radius: 6px; }
+    .con-info-label { font-size: 8px; min-width: 44px; }
+    .con-info-val { font-size: 12px; }
+
+    .con-sns-row { gap: 6px; margin-bottom: 16px; }
+    .con-sns-btn { padding: 9px 10px; font-size: 10px; border-radius: 6px; }
+
+    .con-tagline-box { font-size: 13px; padding: 10px 12px; margin-bottom: 16px; }
+
+    /* Close button */
+    .sec-close { font-size: 9px; padding: 8px 0; }
+  }
+
 </style>
 </head>
 <body>
