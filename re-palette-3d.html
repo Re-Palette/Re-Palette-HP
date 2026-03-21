@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Re-Palette — 美容を、社会復帰のインフラへ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;700&display=swap');
+
+  :root {
+    --cream: #faf6f0;
+    --ink: #1a1208;
+    --gold: #c9a55a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--cream);
+    cursor: none;
+  }
+
+  /* ── Custom cursor ── */
+  #cursor {
+    position: fixed; z-index: 9999;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: multiply;
+    transition: transform .15s ease, width .2s ease, height .2s ease, background .2s;
+  }
+  #cursor.hover {
+    width: 44px; height: 44px;
+    background: rgba(201,165,90,.45);
+  }
+
+  /* ── Canvas layer ── */
+  #bg-canvas {
+    position: fixed; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Loader ── */
+  #loader {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--cream);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px;
+    transition: opacity .8s ease;
+  }
+  #loader-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(28px, 5vw, 52px);
+    letter-spacing: .18em;
+    color: var(--ink);
+    opacity: 0;
+    animation: fadeUp .8s .3s forwards;
+  }
+  #loader-sub {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 300;
+    font-size: 12px;
+    letter-spacing: .3em;
+    color: var(--gold);
+    opacity: 0;
+    animation: fadeUp .8s .6s forwards;
+  }
+  #loader-bar {
+    width: 180px; height: 1px;
+    background: #e0d8cc;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp .5s .9s forwards;
+  }
+  #loader-fill {
+    height: 100%;
+    background: var(--gold);
+    width: 0;
+    animation: loadFill 1.4s 1s ease forwards;
+  }
+  @keyframes loadFill { to { width: 100%; } }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Main wrapper ── */
+  #site {
+    position: fixed; inset: 0; z-index: 1;
+    opacity: 0;
+    transition: opacity .8s ease;
+    overflow: hidden;
+  }
+  #site.visible { opacity: 1; }
+
+  /* ── HERO ── */
+  #hero {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    pointer-events: none;
+    z-index: 2;
+  }
+  #hero-eyebrow {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 300;
+    font-size: 11px;
+    letter-spacing: .45em;
+    color: var(--gold);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .7s, transform .7s;
+    margin-bottom: 20px;
+  }
+  #hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(48px, 9vw, 110px);
+    font-weight: 300;
+    letter-spacing: .06em;
+    color: var(--ink);
+    line-height: 1;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .8s .1s, transform .8s .1s;
+  }
+  #hero-dash {
+    width: 60px; height: 1px;
+    background: var(--gold);
+    margin: 28px auto;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: opacity .6s .3s, transform .8s .3s;
+  }
+  #hero-sub {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 300;
+    font-size: clamp(12px, 1.4vw, 15px);
+    letter-spacing: .25em;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .7s .5s, transform .7s .5s;
+    text-align: center;
+  }
+  #hero.in .hero-el {
+    opacity: 1 !important;
+    transform: translateY(0) scaleX(1) !important;
+  }
+
+
+  /* ── Palette nav marquee ── */
+  #palette-nav {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    overflow: hidden;
+    padding-bottom: 0;
+    z-index: 3;
+    mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    opacity: 0;
+    transition: opacity .6s;
+  }
+  #palette-nav.in { opacity: 1; }
+
+  #belt-wrapper {
+    display: flex;
+    width: max-content;
+    align-items: flex-end;
+  }
+  #belt-wrapper.running {
+    animation: beltRoll var(--dur, 20s) linear infinite;
+  }
+  @keyframes beltRoll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(calc(-1 * var(--set-w, 50%))); }
+  }
+  .marquee-set {
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 48px;
+    gap: clamp(14px, 3vw, 36px);
+    flex-shrink: 0;
+  }
+
+  .paint-tube {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: none;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .paint-tube:hover .tube-body  { transform: translateY(-14px) rotate(-5deg) scale(1.1); }
+  .paint-tube:hover .tube-label { opacity: 1; transform: translateY(0); }
+
+  .tube-body {
+    width: clamp(36px, 5vw, 52px);
+    transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,.13));
+  }
+  .tube-label {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px;
+    letter-spacing: .25em;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .3s, transform .3s;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  /* ── Section overlay ── */
+  #section-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    pointer-events: none;
+    transition: opacity .5s;
+    opacity: 0;
+    overflow: hidden;
+  }
+  #section-overlay.open {
+    pointer-events: all;
+    opacity: 1;
+  }
+
+  /* Full-screen panel split layout */
+  #sec-panel {
+    position: absolute; inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1.45fr;
+    height: 100%;
+    transform: translateY(100%);
+    transition: transform .65s cubic-bezier(.16,1,.3,1);
+  }
+  #section-overlay.open #sec-panel {
+    transform: translateY(0);
+  }
+
+  /* LEFT — color slab */
+  #sec-left {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: clamp(28px,5vw,64px);
+    padding-top: clamp(60px,8vw,90px);
+    overflow: hidden;
+  }
+  #sec-left-bg {
+    position: absolute; inset: 0;
+    transition: background .3s;
+  }
+  #sec-left-label {
+    position: absolute;
+    top: clamp(20px,3vw,36px);
+    left: clamp(20px,3vw,36px);
+    z-index: 3;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .35em;
+    color: rgba(255,255,255,.9);
+    text-transform: uppercase;
+  }
+  #sec-big-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(100px,18vw,220px);
+    font-weight: 300;
+    line-height: .85;
+    color: rgba(255,255,255,.13);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -.02em;
+  }
+  #sec-left-icon {
+    position: relative; z-index: 2;
+    margin-bottom: 24px;
+  }
+  #sec-left-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(26px,4vw,48px);
+    font-weight: 300;
+    color: #fff;
+    line-height: 1.2;
+    position: relative; z-index: 2;
+    margin-bottom: 16px;
+  }
+  #sec-left-eyebrow {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px;
+    letter-spacing: .45em;
+    color: rgba(255,255,255,.65);
+    position: relative; z-index: 2;
+    margin-bottom: 32px;
+  }
+  #sec-paint-blob {
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.07);
+    pointer-events: none;
+  }
+  #sec-paint-blob2 {
+    position: absolute;
+    bottom: -100px; left: -60px;
+    width: 260px; height: 260px;
+    border-radius: 60% 40% 55% 45% / 45% 55% 45% 55%;
+    background: rgba(255,255,255,.05);
+    pointer-events: none;
+  }
+
+  /* RIGHT — content */
+  #sec-right {
+    background: #faf6f0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(28px,5vw,72px) clamp(28px,5vw,60px);
+    overflow-y: auto;
+    position: relative;
+  }
+  #sec-right::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.08) 30%, rgba(0,0,0,.08) 70%, transparent);
+  }
+
+  .sec-eyebrow {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px;
+    letter-spacing: .45em;
+    color: var(--gold);
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity .5s .35s, transform .5s .35s;
+  }
+  #section-overlay.open .sec-eyebrow { opacity:1; transform:translateX(0); }
+
+  .sec-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(22px, 3.2vw, 38px);
+    font-weight: 300;
+    color: var(--ink);
+    margin-bottom: 8px;
+    line-height: 1.25;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .5s .42s, transform .5s .42s;
+  }
+  #section-overlay.open .sec-title { opacity:1; transform:translateY(0); }
+
+  .sec-divider {
+    height: 2px;
+    border-radius: 2px;
+    margin: 20px 0 24px;
+    width: 0;
+    transition: width .7s .5s ease;
+  }
+  #section-overlay.open .sec-divider { width: 100%; }
+
+  .sec-body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 300;
+    font-size: 13.5px;
+    line-height: 2;
+    color: #3a2e20;
+    margin-bottom: 28px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .5s .55s, transform .5s .55s;
+  }
+  #section-overlay.open .sec-body { opacity:1; transform:translateY(0); }
+
+  /* stat cards */
+  .sec-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px,1fr));
+    gap: 10px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .5s .62s, transform .5s .62s;
+  }
+  #section-overlay.open .sec-stats { opacity:1; transform:translateY(0); }
+  .stat-card {
+    border-radius: 8px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(20px, 2.5vw, 28px);
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 9px;
+    letter-spacing: .2em;
+    color: #6a5a48;
+    line-height: 1.5;
+  }
+
+  /* flow steps */
+  .sec-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .5s .62s, transform .5s .62s;
+  }
+  #section-overlay.open .sec-flow { opacity:1; transform:translateY(0); }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.03);
+  }
+  .flow-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: right;
+  }
+  .flow-text {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: #3a2e20;
+  }
+  .flow-text strong {
+    font-weight: 700;
+    display: block;
+    font-size: 11px;
+    letter-spacing: .1em;
+    margin-bottom: 2px;
+  }
+
+  /* ecosystem */
+  .sec-ecosystem {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .5s .62s, transform .5s .62s;
+  }
+  #section-overlay.open .sec-ecosystem { opacity:1; transform:translateY(0); }
+  .eco-node {
+    border-radius: 10px;
+    padding: 16px 10px;
+    text-align: center;
+  }
+  .eco-icon { margin-bottom: 10px; display: flex; justify-content: center; }
+  .eco-title { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 11px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: .08em; }
+  .eco-desc  { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 10px; font-weight: 300; color: #6a5a48; line-height: 1.6; }
+
+  /* vision quote */
+  .sec-quote {
+    border-left: 3px solid;
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 28px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(14px,1.6vw,18px);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.8;
+    background: rgba(0,0,0,.03);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .5s .62s, transform .5s .62s;
+  }
+  #section-overlay.open .sec-quote { opacity:1; transform:translateY(0); }
+
+  /* contact CTA */
+  .sec-cta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .5s .62s, transform .5s .62s;
+  }
+  #section-overlay.open .sec-cta { opacity:1; transform:translateY(0); }
+  .cta-chip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--ink);
+    border: 1px solid rgba(0,0,0,.1);
+  }
+  .cta-chip-icon { flex-shrink: 0; display: flex; align-items: center; }
+
+  .sec-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px;
+    letter-spacing: .35em;
+    color: var(--ink);
+    cursor: none;
+    background: none; border: none;
+    padding: 10px 0;
+    opacity: 0;
+    transition: opacity .4s .7s;
+  }
+  #section-overlay.open .sec-close { opacity: 1; }
+  .sec-close::before {
+    content: '';
+    display: block;
+    width: 28px; height: 1px;
+    background: var(--ink);
+    transition: width .3s;
+  }
+  .sec-close:hover::before { width: 52px; }
+
+  /* ── Paint splash particles ── */
+  .splash {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 4;
+    animation: splashAnim .7s ease forwards;
+  }
+  @keyframes splashAnim {
+    0%   { transform: scale(0) translate(0,0); opacity: .9; }
+    60%  { opacity: .7; }
+    100% { transform: scale(1) translate(var(--tx), var(--ty)); opacity: 0; }
+  }
+
+  /* ── Ink drip top accent ── */
+  #drip-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 4px;
+    z-index: 5;
+    display: flex;
+  }
+  .drip-seg {
+    flex: 1;
+    position: relative;
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: opacity .4s, transform .4s;
+  }
+  .drip-seg.in { opacity: 1; transform: scaleY(1); }
+  .drip-seg::after {
+    content: '';
+    position: absolute;
+    bottom: -14px; left: 50%;
+    transform: translateX(-50%);
+    width: 6px; height: 14px;
+    border-radius: 0 0 6px 6px;
+    background: inherit;
+  }
+
+  /* ── Top nav ── */
+  #top-nav {
+    position: fixed; top: 28px; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 clamp(24px, 5vw, 60px);
+    z-index: 10;
+    opacity: 0;
+    transition: opacity .6s;
+  }
+  #top-nav.in { opacity: 1; }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    letter-spacing: .18em;
+    color: var(--ink);
+    font-style: italic;
+  }
+  .nav-tagline {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px;
+    letter-spacing: .3em;
+    color: var(--gold);
+    font-weight: 300;
+  }
+
+  /* ── Hint text ── */
+  #hint {
+    position: fixed;
+    bottom: 32px; right: clamp(20px, 4vw, 48px);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 9px;
+    letter-spacing: .35em;
+    color: #b8a898;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity .6s 1.5s;
+    writing-mode: vertical-rl;
+  }
+  #hint.in { opacity: 1; }
+
+  /* ── Footer ── */
+  #site-footer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(24px,5vw,60px) 22px;
+    opacity: 0;
+    transition: opacity .6s;
+    pointer-events: none;
+  }
+  #site-footer.in { opacity: 1; pointer-events: all; }
+  .footer-left { display: flex; align-items: center; gap: 28px; }
+  .footer-item {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; font-weight: 300; letter-spacing: .18em;
+    color: #8a7a6a; white-space: nowrap;
+  }
+  .footer-item svg { opacity: .55; flex-shrink: 0; }
+  .footer-divider { width: 1px; height: 14px; background: #c8bfb4; }
+  .footer-copy {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px; letter-spacing: .15em; color: #b0a090; font-style: italic;
+  }
+
+  /* ── Contact page rich styles ── */
+  .con-partner-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity .5s .55s, transform .5s .55s;
+  }
+  #section-overlay.open .con-partner-grid { opacity:1; transform:translateY(0); }
+  .con-partner-card {
+    border-radius: 12px;
+    padding: 18px 12px 14px;
+    text-align: center;
+    border: 1px solid rgba(155,89,204,.2);
+    background: rgba(155,89,204,.06);
+    transition: background .3s, transform .3s;
+    cursor: none;
+  }
+  .con-partner-card:hover {
+    background: rgba(155,89,204,.13);
+    transform: translateY(-4px);
+  }
+  .con-partner-icon {
+    display: flex; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .con-partner-name {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: .12em;
+    color: var(--ink); margin-bottom: 5px;
+  }
+  .con-partner-desc {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; font-weight: 300; color: #7a6a8a; line-height: 1.6;
+  }
+
+  .con-info-row {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 20px;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity .5s .68s, transform .5s .68s;
+  }
+  #section-overlay.open .con-info-row { opacity:1; transform:translateY(0); }
+  .con-info-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 8px;
+    background: rgba(155,89,204,.05);
+    border: 1px solid rgba(155,89,204,.12);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px; font-weight: 300; color: var(--ink);
+    letter-spacing: .1em;
+  }
+  .con-info-label {
+    font-size: 9px; letter-spacing: .3em;
+    color: #9b59cc; font-weight: 300;
+    min-width: 56px;
+  }
+  .con-info-val {
+    font-family: 'Cormorant Garamond', sans-serif;
+    font-size: 13px; color: #2a1a3a;
+  }
+
+  .con-sns-row {
+    display: flex; gap: 10px; margin-bottom: 20px;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity .5s .75s, transform .5s .75s;
+  }
+  #section-overlay.open .con-sns-row { opacity:1; transform:translateY(0); }
+  .con-sns-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 14px; border-radius: 8px;
+    border: 1px solid rgba(155,89,204,.2);
+    background: rgba(155,89,204,.06);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; letter-spacing: .18em; color: #6a3a9a; font-weight: 300;
+    cursor: none; transition: background .3s, transform .3s;
+  }
+  .con-sns-btn:hover { background: rgba(155,89,204,.15); transform: translateY(-2px); }
+  a.con-sns-btn { text-decoration: none; color: #6a3a9a; }
+
+  .con-tagline-box {
+    border-left: 3px solid #9b59cc;
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    background: rgba(155,89,204,.06);
+    margin-bottom: 20px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(13px,1.5vw,16px);
+    font-style: italic; font-weight: 300;
+    color: var(--ink); line-height: 1.8;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity .5s .48s, transform .5s .48s;
+  }
+  #section-overlay.open .con-tagline-box { opacity:1; transform:translateY(0); }
+
+
+
+      to   { transform: translateX(-50%); }
+  }
+  .marquee-tube {
+    width: clamp(22px, 3vw, 34px);
+    opacity: 0.22;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.08));
+    flex-shrink: 0;
+  }
+  .marquee-tube:nth-child(odd)  { transform: rotate(-6deg) translateY(2px); }
+  .marquee-tube:nth-child(even) { transform: rotate(4deg) translateY(-2px); }
+
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<canvas id="bg-canvas"></canvas>
+<div id="drip-bar"></div>
+
+<!-- Loader -->
+<div id="loader">
+  <div id="loader-logo">Re-Palette</div>
+  <div id="loader-sub">美容を、社会復帰のインフラへ</div>
+  <div id="loader-bar"><div id="loader-fill"></div></div>
+</div>
+
+<!-- Main site -->
+<div id="site">
+  <nav id="top-nav">
+    <span class="nav-logo">Re-Palette</span>
+    
+  </nav>
+
+  <section id="hero">
+    <div id="hero-eyebrow" class="hero-el">SOCIAL BEAUTY PROJECT</div>
+    <div id="hero-title"   class="hero-el">Re-Palette</div>
+    <div id="hero-dash"    class="hero-el"></div>
+    <div id="hero-sub"     class="hero-el">美容を「おしゃれ」から「社会復帰のインフラ」へ</div>
+  </section>
+
+  <nav id="palette-nav"></nav>
+
+  <div id="hint">絵の具を選んでください</div>
+
+  <!-- Footer -->
+  <footer id="site-footer">
+    <div class="footer-left">
+      <div class="footer-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0116 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        羽田国際高等学校
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+        <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fe8c9bd38e9f929b8a8a9bbe969f909b9a9fd3968dd0948e">[email&#160;protected]</a>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .82h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        代表：鈴木 陽大
+      </div>
+    </div>
+    <div class="footer-copy">© 2025 Re-Palette</div>
+  </footer>
+</div>
+
+<!-- Section overlay -->
+<div id="section-overlay">
+  <div id="sec-panel">
+    <div id="sec-left">
+      <div id="sec-left-bg"></div>
+      <div id="sec-paint-blob"></div>
+      <div id="sec-paint-blob2"></div>
+      <div id="sec-big-num"></div>
+      <div id="sec-left-label"></div>
+      <div id="sec-left-icon"></div>
+      <div id="sec-left-eyebrow"></div>
+      <div id="sec-left-title"></div>
+    </div>
+    <div id="sec-right">
+      <div id="section-content"></div>
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ─────────────────────────────────
+// DATA
+// ─────────────────────────────────
+const SECTIONS = [
+  {
+    id: 'concept', label: 'コンセプト', color: '#e85c4a', dark: '#b03428',
+    eyebrow: '01 — CONCEPT', title: '美容を、社会復帰の\nインフラへ',
+    body: 'Re-Palette（リ・パレット）は、不登校・ひきこもり当事者など社会との接点に課題を抱える方々に対し、美容という具体的アプローチを通じて自己肯定感を回復し、社会への第一歩を支援する事業です。\n\n「見た目への自信の欠如」が生む社会参加の壁を、新人美容師×美容学生の共創モデルで取り除きます。'
+  },
+  {
+    id: 'issue', label: '社会課題', color: '#f4a428', dark: '#b87318',
+    eyebrow: '02 — SOCIAL ISSUE', title: '346,000人の\n「見えない壁」',
+    body: '医療（内面のケア）と就労支援（スキルの習得）の間に、「社会に出るための自信を育む場」が不足しています。'
+  },
+  {
+    id: 'service', label: 'サービス', color: '#f7ca2f', dark: '#b89120',
+    eyebrow: '03 — SERVICE', title: '約4時間の\nイベントフロー',
+    body: ''
+  },
+  {
+    id: 'model', label: 'ビジネスモデル', color: '#4caa6e', dark: '#2d7a4e',
+    eyebrow: '04 — BUSINESS MODEL', title: '三者共創の\nエコシステム',
+    body: ''
+  },
+  {
+    id: 'team', label: 'チーム', color: '#3b8fe0', dark: '#1b5faa',
+    eyebrow: '05 — TEAM', title: '代表：鈴木 陽大',
+    body: '羽田国際高等学校 2年生。Re-Paletteを創設・代表。\n\nビジョン：美容という「誰でも体験できるインフラ」を通じて、社会と個人の間に橋を架け、すべての人が「自分らしく社会に出られる」環境をつくる。'
+  },
+  {
+    id: 'contact', label: 'お問い合わせ', color: '#9b59cc', dark: '#6b2a9a',
+    eyebrow: '06 — CONTACT', title: 'ともに、\n彩りを取り戻す',
+    body: 'Re-Paletteは現在、連携先の支援機関・福祉施設、美容学校・サロン、スポンサー企業を募集しています。\n\n美容を通じた社会復帰支援に共感いただける方、ぜひご連絡ください。'
+  }
+];
+
+// ─────────────────────────────────
+// CURSOR
+// ─────────────────────────────────
+const cursor = document.getElementById('cursor');
+let mx = 0, my = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+});
+function setCursorHover(on) { cursor.classList.toggle('hover', on); }
+
+// ─────────────────────────────────
+// CANVAS — floating paint blobs
+// ─────────────────────────────────
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS = SECTIONS.map(s => s.color);
+
+class Blob {
+  constructor(i) {
+    this.x  = Math.random() * canvas.width;
+    this.y  = Math.random() * canvas.height;
+    this.r  = Math.random() * 120 + 60;
+    this.vx = (Math.random() - .5) * .35;
+    this.vy = (Math.random() - .5) * .35;
+    this.color = COLORS[i % COLORS.length];
+    this.alpha = Math.random() * .09 + .04;
+    this.phase = Math.random() * Math.PI * 2;
+    this.wobble = Math.random() * .015 + .008;
+  }
+  draw(t) {
+    const p = this.phase + t * this.wobble;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    const grad = ctx.createRadialGradient(0,0,0,0,0,this.r);
+    grad.addColorStop(0, this.color + 'cc');
+    grad.addColorStop(1, this.color + '00');
+    ctx.globalAlpha = this.alpha * (.85 + .15 * Math.sin(p));
+    ctx.beginPath();
+    for (let a = 0; a < Math.PI*2; a += .1) {
+      const nr = this.r * (1 + .12 * Math.sin(3*a + p));
+      const px = Math.cos(a)*nr, py = Math.sin(a)*nr;
+      a === 0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill(); ctx.restore();
+    this.x += this.vx + .5*Math.sin(p)*.4;
+    this.y += this.vy + .5*Math.cos(p)*.4;
+    if (this.x < -this.r*2) this.x = canvas.width + this.r;
+    if (this.x > canvas.width + this.r*2) this.x = -this.r;
+    if (this.y < -this.r*2) this.y = canvas.height + this.r;
+    if (this.y > canvas.height + this.r*2) this.y = -this.r;
+  }
+}
+
+const blobs = Array.from({length: 14}, (_, i) => new Blob(i));
+let t = 0;
+function drawBG() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  blobs.forEach(b => b.draw(t));
+  t += .6;
+  requestAnimationFrame(drawBG);
+}
+drawBG();
+
+setInterval(() => {
+  const ci = Math.floor(Math.random() * COLORS.length);
+  blobs[0].x = mx; blobs[0].y = my;
+  blobs[0].r = 90; blobs[0].alpha = .07; blobs[0].color = COLORS[ci];
+}, 400);
+
+// ─────────────────────────────────
+// DRIP BAR
+// ─────────────────────────────────
+const dripBar = document.getElementById('drip-bar');
+SECTIONS.forEach(s => {
+  const seg = document.createElement('div');
+  seg.className = 'drip-seg';
+  seg.style.background = s.color;
+  dripBar.appendChild(seg);
+});
+
+// ─────────────────────────────────
+// TUBE SVG
+// ─────────────────────────────────
+function tubeSVG(color, dark) {
+  return `<svg viewBox="0 0 54 160" xmlns="http://www.w3.org/2000/svg">
+  <rect x="17" y="0" width="20" height="22" rx="5" fill="${dark}"/>
+  <rect x="20" y="22" width="14" height="8" rx="2" fill="${dark}"/>
+  <path d="M14 30 Q14 42 10 52 L10 148 Q10 155 27 155 Q44 155 44 148 L44 52 Q40 42 40 30 Z" fill="${color}"/>
+  <path d="M16 38 Q16 50 13 60 L13 140" stroke="rgba(255,255,255,.22)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="13" y="72" width="28" height="46" rx="3" fill="rgba(255,255,255,.18)"/>
+  <line x1="13" y1="138" x2="41" y2="138" stroke="${dark}" stroke-width="2.5"/>
+  <line x1="13" y1="144" x2="41" y2="144" stroke="${dark}" stroke-width="2.5"/>
+  <line x1="13" y1="150" x2="41" y2="150" stroke="${dark}" stroke-width="2.5"/>
+  <circle cx="27" cy="10" r="5" fill="${color}" opacity=".55"/>
+</svg>`;
+}
+
+function tubeSVGMini(color) {
+  return `<rect x="20" y="2" width="20" height="16" rx="4" fill="rgba(255,255,255,.4)"/>
+  <path d="M16 20 Q16 28 13 34 L13 54 Q13 58 30 58 Q47 58 47 54 L47 34 Q44 28 44 20 Z" fill="rgba(255,255,255,.25)"/>
+  <path d="M18 26 Q18 33 16 38 L16 50" stroke="rgba(255,255,255,.3)" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+}
+
+// ─────────────────────────────────
+// BUILD NAV TUBES — marquee belt (duplicate for seamless loop)
+// ─────────────────────────────────
+const paletteNav = document.getElementById('palette-nav');
+
+function makeTube(sec) {
+  const wrap = document.createElement('div');
+  wrap.className = 'paint-tube';
+  const body = document.createElement('div');
+  body.className = 'tube-body';
+  body.innerHTML = tubeSVG(sec.color, sec.dark);
+  const label = document.createElement('div');
+  label.className = 'tube-label';
+  label.textContent = sec.label;
+  wrap.appendChild(body);
+  wrap.appendChild(label);
+  wrap.addEventListener('mouseenter', () => { setCursorHover(true); spawnSplash(sec.color, 6); });
+  wrap.addEventListener('mouseleave', () => setCursorHover(false));
+  wrap.addEventListener('click', e => openSection(sec, e.clientX, e.clientY));
+  return wrap;
+}
+
+function buildBelt() {
+  // Two identical belts side by side — JS measures actual width after render
+  // then sets animation duration so speed is constant regardless of screen width
+  const beltA = document.createElement('div');
+  const beltB = document.createElement('div');
+  beltA.className = 'marquee-set';
+  beltB.className = 'marquee-set';
+
+  // Enough tubes to always overflow: repeat 6-tube set 6 times per half
+  const repeat = 6;
+  for (let r = 0; r < repeat; r++) {
+    SECTIONS.forEach(sec => {
+      beltA.appendChild(makeTube(sec));
+      beltB.appendChild(makeTube(sec));
+    });
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'belt-wrapper';
+  wrapper.appendChild(beltA);
+  wrapper.appendChild(beltB);
+  paletteNav.appendChild(wrapper);
+
+  // After render: measure one set, then animate translateX(-setWidth) at constant speed
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const setW = beltA.offsetWidth;
+      const speed = 70; // px per second
+      const dur = setW / speed;
+      wrapper.style.setProperty('--set-w', setW + 'px');
+      wrapper.style.setProperty('--dur', dur + 's');
+      wrapper.classList.add('running');
+    });
+  });
+}
+buildBelt();
+
+// ─────────────────────────────────
+// SPLASH
+// ─────────────────────────────────
+function spawnSplash(color, count) {
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+    d.className = 'splash';
+    const size = Math.random()*14+6;
+    const angle = Math.random()*Math.PI*2;
+    const dist = Math.random()*60+20;
+    d.style.cssText = `left:${mx}px;top:${my}px;width:${size}px;height:${size}px;background:${color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;animation-delay:${Math.random()*0.12}s;`;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 800);
+  }
+}
+document.addEventListener('click', () => {
+  const ci = Math.floor(Math.random()*COLORS.length);
+  spawnSplash(COLORS[ci], 8);
+});
+
+
+// ─────────────────────────────────
+// SVG LINE-ART ICONS
+// ─────────────────────────────────
+function svgIcon(paths, col, size=36) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" stroke="${col}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+}
+// person
+function iconPerson(col,s=36){ return svgIcon('<circle cx="18" cy="11" r="6"/><path d="M6 34c0-6.627 5.373-12 12-12s12 5.373 12 12"/>',col,s); }
+// scissors
+function iconScissors(col,s=36){ return svgIcon('<circle cx="9" cy="27" r="4"/><circle cx="9" cy="9" r="4"/><line x1="21" y1="7" x2="12.5" y2="11.5"/><line x1="21" y1="29" x2="12.5" y2="24.5"/><line x1="21" y1="7" x2="31" y2="19"/><line x1="21" y1="29" x2="31" y2="19"/>',col,s); }
+// building/hospital
+function iconHospital(col,s=36){ return svgIcon('<rect x="5" y="10" width="26" height="22" rx="2"/><path d="M13 32V22h10v10"/><line x1="18" y1="15" x2="18" y2="21"/><line x1="15" y1="18" x2="21" y2="18"/><path d="M11 10V8a2 2 0 012-2h10a2 2 0 012 2v2"/>',col,s); }
+// briefcase
+function iconBriefcase(col,s=36){ return svgIcon('<rect x="4" y="12" width="28" height="20" rx="2"/><path d="M13 12V9a2 2 0 012-2h6a2 2 0 012 2v3"/><line x1="4" y1="22" x2="32" y2="22"/>',col,s); }
+// mirror / face (concept — person looking in mirror)
+function iconMirror(col,s=36){ return svgIcon('<circle cx="18" cy="14" r="7"/><path d="M11 21c0 3.866 3.134 7 7 7s7-3.134 7-7"/><line x1="18" y1="28" x2="18" y2="34"/><line x1="13" y1="34" x2="23" y2="34"/>',col,s); }
+// chart / social issue
+function iconChart(col,s=36){ return svgIcon('<polyline points="4,28 12,18 20,22 28,10"/><line x1="4" y1="32" x2="32" y2="32"/><line x1="4" y1="8" x2="4" y2="32"/>',col,s); }
+// calendar / service flow
+function iconCalendar(col,s=36){ return svgIcon('<rect x="4" y="7" width="28" height="24" rx="2"/><line x1="4" y1="14" x2="32" y2="14"/><line x1="12" y1="4" x2="12" y2="10"/><line x1="24" y1="4" x2="24" y2="10"/><line x1="10" y1="20" x2="14" y2="20"/><line x1="17" y1="20" x2="21" y2="20"/><line x1="24" y1="20" x2="28" y2="20"/><line x1="10" y1="26" x2="14" y2="26"/><line x1="17" y1="26" x2="21" y2="26"/>',col,s); }
+// network / ecosystem
+function iconNetwork(col,s=36){ return svgIcon('<circle cx="18" cy="6" r="3"/><circle cx="6" cy="28" r="3"/><circle cx="30" cy="28" r="3"/><line x1="18" y1="9" x2="8" y2="25"/><line x1="18" y1="9" x2="28" y2="25"/><line x1="9" y1="28" x2="27" y2="28"/>',col,s); }
+// user with badge (team)
+function iconBadge(col,s=36){ return svgIcon('<circle cx="18" cy="11" r="6"/><path d="M6 32c0-6.627 5.373-12 12-12s12 5.373 12 12"/><rect x="13" y="20" width="10" height="7" rx="1"/><line x1="16" y1="23" x2="20" y2="23"/>',col,s); }
+// mail
+function iconMail(col,s=36){ return svgIcon('<rect x="3" y="7" width="30" height="22" rx="2"/><polyline points="3,7 18,19 33,7"/>',col,s); }
+// location pin
+function iconPin(col,s=36){ return svgIcon('<path d="M18 3a10 10 0 00-10 10c0 7 10 20 10 20s10-13 10-20A10 10 0 0018 3z"/><circle cx="18" cy="13" r="3.5"/>',col,s); }
+// phone
+function iconPhone(col,s=36){ return svgIcon('<path d="M6 5h7l2 5-3.5 2.5a16 16 0 006 6L20 15l5 2v7a2 2 0 01-2 2C10.163 26 5 10.837 5 7a2 2 0 011-2z"/>',col,s); }
+
+// ─────────────────────────────────
+// SECTION CONTENT BUILDER
+// ─────────────────────────────────
+function buildSectionInner(sec) {
+  switch(sec.id) {
+    case 'concept': return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-body">${sec.body.replace(/\n/g,'<br><br>')}</div>
+      <div class="sec-quote" style="border-color:${sec.color}">
+        ${iconMirror(sec.color, 28)}&nbsp;&nbsp;「見た目への自信の欠如」が生む社会参加の壁を、美容という具体的アプローチで取り除く。
+      </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`;
+
+    case 'issue': return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-body">${iconChart(sec.color,22)}&ensp;医療（内面のケア）と就労支援（スキルの習得）の間に、「社会に出るための自信を育む場」が不足しています。</div>
+      <div class="sec-stats">
+        <div class="stat-card" style="background:${sec.color}18">
+          <div class="stat-num" style="color:${sec.color}">346,000</div>
+          <div class="stat-label">不登校生徒数<br>（2023年度）</div>
+        </div>
+        <div class="stat-card" style="background:${sec.color}18">
+          <div class="stat-num" style="color:${sec.color}">146万人</div>
+          <div class="stat-label">ひきこもり推計<br>（内閣府2023）</div>
+        </div>
+        <div class="stat-card" style="background:${sec.color}18">
+          <div class="stat-num" style="color:${sec.color}">50%</div>
+          <div class="stat-label">少年院出所者<br>再犯率</div>
+        </div>
+      </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`;
+
+    case 'service': return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-flow">
+        <div class="flow-step"><div class="flow-num" style="color:${sec.color}">${iconPerson(sec.color,22)}</div><div class="flow-text"><strong>アイスブレイク ― 20分</strong>参加者同士でコミュニティを形成。緊張をほぐし、相互紹介。</div></div>
+        <div class="flow-step"><div class="flow-num" style="color:${sec.color}">${iconScissors(sec.color,22)}</div><div class="flow-text"><strong>プレ・メンタリング ― 30分</strong>1対1の対話で信頼関係を構築。「パス可能ルール」で自分のペースを守れます。</div></div>
+        <div class="flow-step"><div class="flow-num" style="color:${sec.color}">${iconScissors(sec.color,22)}</div><div class="flow-text"><strong>共創ワークショップ ★ ― 150分</strong>新人美容師が施術、美容学生が「明日から再現できる技術」をレクチャー。</div></div>
+        <div class="flow-step"><div class="flow-num" style="color:${sec.color}">${iconMirror(sec.color,22)}</div><div class="flow-text"><strong>アフターケア ― 20分</strong>「ステータスカード」で成長を記録し、自信の持続をサポート。</div></div>
+      </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`;
+
+    case 'model': {
+      const col = sec.color;
+      const dk = sec.dark;
+      const pSVG = '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" stroke="' + col + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="19" cy="12" r="6"/><path d="M7 34c0-6.627 5.373-12 12-12s12 5.373 12 12"/></svg>';
+      const sSVG = '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" stroke="' + col + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="28" r="4"/><circle cx="10" cy="10" r="4"/><line x1="22" y1="8" x2="13.5" y2="12.5"/><line x1="22" y1="30" x2="13.5" y2="25.5"/><line x1="22" y1="8" x2="32" y2="20"/><line x1="22" y1="30" x2="32" y2="20"/></svg>';
+      const hSVG = '<svg width="38" height="38" viewBox="0 0 38 38" fill="none" stroke="' + col + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="10" width="26" height="24" rx="2"/><path d="M14 34V24h10v10"/><line x1="19" y1="16" x2="19" y2="22"/><line x1="16" y1="19" x2="22" y2="19"/><path d="M12 10V7a2 2 0 012-2h10a2 2 0 012 2v3"/></svg>';
+      return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-ecosystem">
+        <div class="eco-node" style="background:${sec.color}14">
+          <span class="eco-icon">${pSVG}</span>
+          <div class="eco-title">参加者</div><div class="eco-desc">自己肯定感の回復と社会復帰への第一歩</div>
+        </div>
+        <div class="eco-node" style="background:${sec.color}14">
+          <span class="eco-icon">${sSVG}</span>
+          <div class="eco-title">美容学生</div><div class="eco-desc">対人スキル・福祉美容資格の取得</div>
+        </div>
+        <div class="eco-node" style="background:${sec.color}14">
+          <span class="eco-icon">${hSVG}</span>
+          <div class="eco-title">支援機関</div><div class="eco-desc">入居者への新たなサービス提供</div>
+        </div>
+      </div>
+      <div class="sec-stats">
+        <div class="stat-card" style="background:${sec.color}18"><div class="stat-num" style="color:${sec.color}">2027</div><div class="stat-label">法人化</div></div>
+        <div class="stat-card" style="background:${sec.color}18"><div class="stat-num" style="color:${sec.color}">2029</div><div class="stat-label">全国展開</div></div>
+        <div class="stat-card" style="background:${sec.color}18"><div class="stat-num" style="color:${sec.color};font-size:clamp(13px,1.8vw,18px);line-height:1.3">創設予定</div><div class="stat-label">福祉美容<br>対人スキル資格</div></div>
+      </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`; }
+
+    case 'team': return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-stats">
+        <div class="stat-card" style="background:${sec.color}18"><div class="stat-num" style="color:${sec.color}">2年</div><div class="stat-label">羽田国際<br>高等学校</div></div>
+        <div class="stat-card" style="background:${sec.color}18"><div class="stat-num" style="color:${sec.color}">創設</div><div class="stat-label">Re-Palette<br>代表</div></div>
+      </div>
+      <div class="sec-quote" style="border-color:${sec.color}">
+        ${iconBadge(sec.color,24)}&nbsp;&nbsp;"美容という「誰でも体験できるインフラ」を通じて、すべての人が「自分らしく社会に出られる」環境をつくる。"
+      </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`;
+
+    case 'contact': {
+      const hSVG2 = iconHospital(sec.color, 26);
+      const sSVG2 = iconScissors(sec.color, 26);
+      const bSVG2 = iconBriefcase(sec.color, 26);
+      const pinSVG = iconPin(sec.color, 16);
+      const mailSVG = iconMail(sec.color, 16);
+      const phoneSVG = iconPhone(sec.color, 16);
+      return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="con-tagline-box">美容を通じた社会復帰支援に共感いただける方々との連携を、心よりお待ちしております。</div>
+      <div class="con-partner-grid">
+        <div class="con-partner-card">
+          <div class="con-partner-icon">${hSVG2}</div>
+          <div class="con-partner-name">支援機関・<br>福祉施設</div>
+          <div class="con-partner-desc">入居者への新たなサービスとして導入可能</div>
+        </div>
+        <div class="con-partner-card">
+          <div class="con-partner-icon">${sSVG2}</div>
+          <div class="con-partner-name">美容学校・<br>サロン</div>
+          <div class="con-partner-desc">美容学生の実践・スキル習得の場として</div>
+        </div>
+        <div class="con-partner-card">
+          <div class="con-partner-icon">${bSVG2}</div>
+          <div class="con-partner-name">スポンサー<br>企業</div>
+          <div class="con-partner-desc">社会的インパクト投資・CSR活動として</div>
+        </div>
+      </div>
+      <div class="con-info-row">
+        <div class="con-info-item">
+          ${pinSVG}
+          <span class="con-info-label">所在地</span>
+          <span class="con-info-val">羽田国際高等学校</span>
+        </div>
+        <div class="con-info-item">
+          ${mailSVG}
+          <span class="con-info-label">メール</span>
+          <span class="con-info-val">mypalette1030@outlook.jp</span>
+        </div>
+        <div class="con-info-item">
+          ${phoneSVG}
+          <span class="con-info-label">担当</span>
+          <span class="con-info-val">代表　鈴木 陽大</span>
+        </div>
+      </div>
+      <div class="con-sns-row">
+        <a class="con-sns-btn" href="https://www.instagram.com/repalette_official/" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6a3a9a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="#6a3a9a" stroke="none"/></svg>
+          Instagram
+        </a>
+        <a class="con-sns-btn" href="https://www.facebook.com/profile.php?id=61587543673430&locale=ja_JP" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6a3a9a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+          Facebook
+        </a>
+        <a class="con-sns-btn" href="mailto:mypalette1030@outlook.jp?subject=Re-Palette%E3%81%8A%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6a3a9a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+          メールを送る
+        </a>
+      </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`; }
+
+    default: return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-body">${sec.body.replace(/\n/g,'<br><br>')}</div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`;
+  }
+}
+
+// ─────────────────────────────────
+// SECTION OVERLAY
+// ─────────────────────────────────
+const overlay    = document.getElementById('section-overlay');
+const secContent = document.getElementById('section-content');
+
+function openSection(sec) {
+  spawnSplash(sec.color, 12);
+  document.getElementById('sec-left-label').textContent = sec.label;
+  document.getElementById('sec-left-bg').style.background = `linear-gradient(145deg, ${sec.color}, ${sec.dark})`;
+  document.getElementById('sec-big-num').textContent = sec.eyebrow.split(' ')[0];
+  document.getElementById('sec-left-eyebrow').textContent = sec.eyebrow;
+  document.getElementById('sec-left-icon').innerHTML = `<svg viewBox="0 0 60 60" width="56" height="56" xmlns="http://www.w3.org/2000/svg">${tubeSVGMini(sec.color)}</svg>`;
+  document.getElementById('sec-left-title').innerHTML = sec.title.replace(/\n/g,'<br>');
+  secContent.innerHTML = buildSectionInner(sec);
+  overlay.classList.add('open');
+  const btn = document.getElementById('sec-close-btn');
+  btn.addEventListener('click', closeSection);
+  btn.addEventListener('mouseenter', () => setCursorHover(true));
+  btn.addEventListener('mouseleave', () => setCursorHover(false));
+}
+
+function closeSection() { overlay.classList.remove('open'); }
+
+overlay.addEventListener('click', e => { if (e.target === overlay) closeSection(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSection(); });
+
+// ─────────────────────────────────
+// INIT
+// ─────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.display = 'none';
+      document.getElementById('site').classList.add('visible');
+      requestAnimationFrame(() => document.getElementById('hero').classList.add('in'));
+      document.getElementById('top-nav').classList.add('in');
+      document.getElementById('hint').classList.add('in');
+      document.getElementById('site-footer').classList.add('in');
+      setTimeout(() => paletteNav.classList.add('in'), 500);
+      document.querySelectorAll('.drip-seg').forEach((el, i) => {
+        setTimeout(() => el.classList.add('in'), 600 + i * 60);
+      });
+    }, 800);
+  }, 2200);
+});
+</script>
+</body>
+</html>
