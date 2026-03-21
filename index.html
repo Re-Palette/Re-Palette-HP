@@ -988,6 +988,11 @@ const SECTIONS = [
     id: 'contact', label: 'お問い合わせ', color: '#9b59cc', dark: '#6b2a9a',
     eyebrow: '06 — CONTACT', title: 'ともに、\n彩りを取り戻す',
     body: 'Re-Paletteは現在、連携先の支援機関・福祉施設、美容学校・サロン、スポンサー企業を募集しています。\n\n美容を通じた社会復帰支援に共感いただける方、ぜひご連絡ください。'
+  },
+  {
+    id: 'diagnosis', label: '骨格・肌診断', color: '#d94f8a', dark: '#a02860',
+    eyebrow: '07 — DIAGNOSIS', title: '骨格・肌診断',
+    body: ''
   }
 ];
 
@@ -1211,6 +1216,10 @@ function iconMail(col,s=36){ return svgIcon('<rect x="3" y="7" width="30" height
 function iconPin(col,s=36){ return svgIcon('<path d="M18 3a10 10 0 00-10 10c0 7 10 20 10 20s10-13 10-20A10 10 0 0018 3z"/><circle cx="18" cy="13" r="3.5"/>',col,s); }
 // phone
 function iconPhone(col,s=36){ return svgIcon('<path d="M6 5h7l2 5-3.5 2.5a16 16 0 006 6L20 15l5 2v7a2 2 0 01-2 2C10.163 26 5 10.837 5 7a2 2 0 011-2z"/>',col,s); }
+// camera / diagnosis
+function iconCamera(col,s=36){ return svgIcon('<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>',col,s); }
+// sparkle / beauty
+function iconSparkle(col,s=36){ return svgIcon('<path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 3l.8 2.2L22 6l-2.2.8L19 9l-.8-2.2L16 6l2.2-.8z"/><path d="M5 17l.6 1.4L7 19l-1.4.6L5 21l-.6-1.4L3 19l1.4-.6z"/>',col,s); }
 
 // ─────────────────────────────────
 // SECTION CONTENT BUILDER
@@ -1364,6 +1373,57 @@ function buildSectionInner(sec) {
           メールを送る
         </a>
       </div>
+      <button class="sec-close" id="sec-close-btn">CLOSE</button>`; }
+
+    case 'diagnosis': {
+      const camSVG  = iconCamera(sec.color, 26);
+      const spkSVG  = iconSparkle(sec.color, 26);
+      const hairSVG = iconScissors(sec.color, 26);
+      const skinSVG = iconMirror(sec.color, 26);
+      return `
+      <div class="sec-eyebrow">${sec.eyebrow}</div>
+      <div class="sec-title">${sec.title.replace(/\n/g,'<br>')}</div>
+      <div class="sec-divider" style="background:linear-gradient(90deg,${sec.color},${sec.dark})"></div>
+      <div class="sec-body">写真から骨格と肌を分析し、あなただけに最適化されたメイク・スキンケア・ヘアセットを提案。道具の選び方から毎日のルーティーンまで、すべてわかります。</div>
+      <div class="sec-ecosystem">
+        <div class="eco-node" style="background:${sec.color}14">
+          <span class="eco-icon">${camSVG}</span>
+          <div class="eco-title">骨格診断</div>
+          <div class="eco-desc">写真1枚で骨格タイプを分析。似合うシルエットとスタイリングを提案</div>
+        </div>
+        <div class="eco-node" style="background:${sec.color}14">
+          <span class="eco-icon">${skinSVG}</span>
+          <div class="eco-title">肌診断</div>
+          <div class="eco-desc">肌タイプ・パーソナルカラーを判定。スキンケアルーティーンを提案</div>
+        </div>
+        <div class="eco-node" style="background:${sec.color}14">
+          <span class="eco-icon">${spkSVG}</span>
+          <div class="eco-title">メイク提案</div>
+          <div class="eco-desc">道具・色・手順まで個人に合わせたメイクレシピを提供</div>
+        </div>
+      </div>
+      <div class="sec-stats">
+        <div class="stat-card" style="background:${sec.color}18">
+          <div class="stat-num" style="color:${sec.color}">${hairSVG}</div>
+          <div class="stat-label">ヘアセット<br>提案付き</div>
+        </div>
+        <div class="stat-card" style="background:${sec.color}18">
+          <div class="stat-num" style="color:${sec.color};font-size:clamp(13px,2vw,18px);line-height:1.2">道具<br>紹介</div>
+          <div class="stat-label">使う道具まで<br>わかる</div>
+        </div>
+        <div class="stat-card" style="background:${sec.color}18">
+          <div class="stat-num" style="color:${sec.color};font-size:clamp(13px,2vw,18px);line-height:1.2">毎日の<br>習慣</div>
+          <div class="stat-label">ルーティーンを<br>サポート</div>
+        </div>
+      </div>
+      <div class="sec-quote" style="border-color:${sec.color}">
+        ${camSVG}&nbsp;&nbsp;診断をはじめる →
+        <br><span style="font-size:11px;font-style:normal;letter-spacing:.15em;opacity:.7">re-palette.github.io</span>
+      </div>
+      <a class="diag-btn" href="https://re-palette.github.io/Re-Palettebeta/" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:10px;margin-bottom:20px;padding:13px 22px;border-radius:8px;background:${sec.color};color:#fff;text-decoration:none;font-family:'Zen Kaku Gothic New',sans-serif;font-size:11px;letter-spacing:.25em;font-weight:300;transition:opacity .3s;opacity:1">
+        ${camSVG.replace(/stroke="[^"]*"/, 'stroke="white"')}&nbsp;診断サイトを開く
+      </a>
       <button class="sec-close" id="sec-close-btn">CLOSE</button>`; }
 
     default: return `
