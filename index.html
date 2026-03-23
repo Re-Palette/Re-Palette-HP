@@ -167,29 +167,20 @@
   #palette-nav {
     position: absolute;
     bottom: 0; left: 0; right: 0;
-    overflow: visible;
+    overflow: hidden;
     padding-bottom: 0;
     z-index: 3;
+    mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
     opacity: 0;
     transition: opacity .6s;
   }
   #palette-nav.in { opacity: 1; }
-  /* fade edges via pseudo-overlay — can't use mask-image with overflow:visible */
-  #palette-nav::before,
-  #palette-nav::after {
-    content: '';
-    position: absolute;
-    top: 0; bottom: 0; width: 80px;
-    z-index: 4; pointer-events: none;
-  }
-  #palette-nav::before { left: 0; background: linear-gradient(90deg, var(--cream), transparent); }
-  #palette-nav::after  { right: 0; background: linear-gradient(270deg, var(--cream), transparent); }
 
   #belt-wrapper {
     display: flex;
     width: max-content;
     align-items: flex-end;
-    overflow: visible;
   }
   #belt-wrapper.running {
     animation: beltRoll var(--dur, 20s) linear infinite;
@@ -215,54 +206,14 @@
     flex-shrink: 0;
     position: relative;
   }
-  .paint-tube:hover .tube-body  { transform: translateY(-16px) rotate(-5deg) scale(1.12); }
-  .paint-tube:hover .tube-label { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  .paint-tube:hover .tube-body  { transform: translateY(-14px) rotate(-5deg) scale(1.1); }
 
   .tube-body {
     width: clamp(36px, 5vw, 52px);
     transition: transform .35s cubic-bezier(.34,1.56,.64,1);
     filter: drop-shadow(0 8px 22px rgba(0,0,0,.13));
   }
-  .tube-label {
-    position: absolute;
-    bottom: calc(100% + 18px);
-    left: 50%;
-    transform: translateX(-50%) translateY(8px) scale(.92);
-    background: var(--ink);
-    color: #fff;
-    font-family: 'Zen Kaku Gothic New', sans-serif;
-    font-size: 10px;
-    font-weight: 300;
-    letter-spacing: .2em;
-    padding: 7px 14px 7px 10px;
-    border-radius: 24px;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity .22s, transform .22s cubic-bezier(.34,1.56,.64,1);
-    pointer-events: none;
-    box-shadow: 0 6px 20px rgba(0,0,0,.22);
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-  .tube-label::before {
-    content: '';
-    display: block;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--tube-color, #fff);
-    flex-shrink: 0;
-    opacity: .9;
-  }
-  .tube-label::after {
-    content: '';
-    position: absolute;
-    top: 100%; left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--ink);
-  }
+  .tube-label { display: none; }
 
   /* ── Section overlay ── */
   #section-overlay {
@@ -1099,39 +1050,51 @@
   }
   .works-card {
     flex-shrink: 0;
-    width: clamp(240px,35vw,420px);
+    width: clamp(240px,30vw,380px);
     border-radius: 12px;
     overflow: hidden;
     position: relative;
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.08);
+    border-top: 3px solid rgba(255,255,255,.2);
     transition: transform .4s, box-shadow .4s;
   }
   .works-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,.4); }
-  .works-img {
+  /* photo area — shows when data-img is set */
+  .works-card-photo {
     width: 100%;
-    aspect-ratio: 4/3;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    display: none; /* hidden by default */
+  }
+  .works-card-photo.has-img { display: block; }
+  .works-card-photo img {
+    width: 100%; height: 100%;
     object-fit: cover;
     display: block;
-    background: rgba(255,255,255,.05);
+    transition: transform .5s ease;
   }
-  .works-img-placeholder {
+  .works-card:hover .works-card-photo img { transform: scale(1.04); }
+  /* placeholder shown when no img */
+  .works-card-photo-placeholder {
     width: 100%;
-    aspect-ratio: 4/3;
+    aspect-ratio: 16/9;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 12px;
-    background: rgba(255,255,255,.04);
+    gap: 10px;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    color: rgba(255,255,255,.2);
   }
-  .works-img-placeholder svg { opacity: .3; }
-  .works-img-placeholder span {
+  .works-card-photo-placeholder svg { opacity: .25; }
+  .works-card-photo-placeholder span {
     font-family: 'Zen Kaku Gothic New', sans-serif;
-    font-size: 10px; letter-spacing: .3em; color: rgba(255,255,255,.3); font-weight: 300;
+    font-size: 9px; letter-spacing: .3em; font-weight: 300;
   }
   .works-card-body {
-    padding: 18px 20px 20px;
+    padding: clamp(18px,2.5vw,26px) clamp(16px,2.5vw,24px);
   }
   .works-card-tag {
     display: inline-block;
@@ -1253,6 +1216,408 @@
     .works-card { width: clamp(220px,75vw,320px); }
   }
 
+
+  /* ══ PARTNER SECTION ══ */
+  #partner-section {
+    width: 100%;
+    background: var(--ink);
+    padding: clamp(60px,10vh,100px) clamp(24px,6vw,80px);
+    position: relative;
+    overflow: hidden;
+  }
+  #partner-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 50%, rgba(155,89,204,.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(75,170,110,.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .partner-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .partner-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px,6vw,80px);
+    align-items: start;
+    margin-bottom: clamp(40px,7vh,72px);
+  }
+  .partner-lead {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13.5px; font-weight: 300; line-height: 2;
+    color: rgba(255,255,255,.65);
+  }
+  .partner-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(10px,2vw,20px);
+    margin-bottom: clamp(32px,5vh,56px);
+  }
+  .partner-card {
+    border-radius: 14px;
+    padding: clamp(20px,3vw,32px) clamp(16px,2.5vw,24px);
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.04);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: background .35s, transform .35s, border-color .35s;
+    cursor: none;
+  }
+  .partner-card:hover {
+    background: rgba(255,255,255,.09);
+    transform: translateY(-5px);
+    border-color: rgba(255,255,255,.2);
+  }
+  .partner-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+  .partner-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(16px,2vw,22px); font-weight: 300; color: #fff;
+    line-height: 1.25;
+  }
+  .partner-card-desc {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; font-weight: 300; color: rgba(255,255,255,.5);
+    line-height: 1.85; flex: 1;
+  }
+  .partner-card-merit {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; font-weight: 300; letter-spacing: .15em;
+    color: rgba(255,255,255,.35);
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding-top: 12px;
+    line-height: 1.7;
+  }
+  .partner-card-merit strong {
+    display: block;
+    color: rgba(255,255,255,.55);
+    margin-bottom: 4px;
+    letter-spacing: .2em;
+    font-size: 9px;
+  }
+  /* CTA row */
+  .partner-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px,2.5vw,24px);
+    flex-wrap: wrap;
+  }
+  .partner-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; font-weight: 300; letter-spacing: .28em;
+    padding: 14px 28px;
+    border-radius: 40px;
+    text-decoration: none;
+    cursor: none;
+    transition: background .3s, transform .3s, color .3s;
+  }
+  .partner-cta-btn.primary {
+    background: #fff; color: var(--ink);
+  }
+  .partner-cta-btn.primary:hover { background: var(--gold); transform: translateY(-2px); }
+  .partner-cta-btn.secondary {
+    border: 1px solid rgba(255,255,255,.3);
+    color: rgba(255,255,255,.85);
+  }
+  .partner-cta-btn.secondary:hover { border-color: rgba(255,255,255,.7); transform: translateY(-2px); }
+
+  @media(max-width:640px){
+    .partner-top { grid-template-columns: 1fr; }
+    .partner-cards { grid-template-columns: 1fr; }
+  }
+
+
+  /* partner cards 4-col for student addition */
+  @media(min-width:900px){
+    .partner-cards { grid-template-columns: repeat(4, 1fr); }
+  }
+  /* Screening section */
+  .partner-screening {
+    margin-bottom: clamp(36px,5vh,56px);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px;
+    padding: clamp(24px,4vw,40px);
+    background: rgba(255,255,255,.03);
+  }
+  .screening-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(20px,2.8vw,30px); font-weight: 300; color: #fff;
+    margin-bottom: 8px;
+  }
+  .screening-sub {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; font-weight: 300; color: rgba(255,255,255,.45);
+    letter-spacing: .2em; margin-bottom: 28px;
+  }
+  .screening-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: clamp(10px,2vw,16px);
+  }
+  .screening-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 16px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.07);
+  }
+  .screening-step::after {
+    content: '→';
+    position: absolute;
+    right: -14px; top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,.2);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .screening-step:last-child::after { display: none; }
+  .step-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px; font-weight: 300; color: var(--gold);
+    line-height: 1;
+  }
+  .step-title {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px; font-weight: 700; color: #fff;
+    letter-spacing: .1em;
+  }
+  .step-desc {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; font-weight: 300; color: rgba(255,255,255,.45);
+    line-height: 1.7;
+  }
+  .step-badge {
+    display: inline-block;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 8px; letter-spacing: .2em; font-weight: 300;
+    padding: 2px 8px; border-radius: 10px;
+    color: #fff; width: fit-content;
+  }
+  @media(max-width:640px){
+    .screening-steps { grid-template-columns: 1fr; }
+    .screening-step::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -14px; transform: translateX(-50%); }
+  }
+
+
+  /* ══ APPLY OVERLAY ══ */
+  #apply-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    opacity: 0; pointer-events: none;
+    transition: opacity .4s;
+    overflow-y: auto;
+  }
+  #apply-overlay.open { opacity: 1; pointer-events: all; }
+  .apply-page {
+    min-height: 100vh;
+    background: var(--cream);
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+  }
+
+  /* Left panel */
+  .apply-left {
+    background: var(--ink);
+    padding: clamp(40px,7vw,80px) clamp(28px,5vw,56px);
+    position: sticky; top: 0;
+    height: 100vh;
+    display: flex; flex-direction: column; justify-content: space-between;
+    overflow: hidden;
+  }
+  .apply-left-top {}
+  .apply-back {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; letter-spacing: .3em; color: rgba(255,255,255,.5);
+    background: none; border: none; cursor: none; padding: 0;
+    margin-bottom: clamp(32px,5vh,56px);
+    transition: color .3s;
+  }
+  .apply-back:hover { color: rgba(255,255,255,.9); }
+  .apply-left-ey {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; letter-spacing: .4em; color: var(--gold); font-weight: 300;
+    margin-bottom: 16px;
+  }
+  .apply-left-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(28px,4vw,48px); font-weight: 300; color: #fff;
+    line-height: 1.2; margin-bottom: 20px;
+  }
+  .apply-left-dash { width: 40px; height: 1px; background: var(--gold); margin-bottom: 20px; }
+  .apply-left-desc {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px; font-weight: 300; color: rgba(255,255,255,.5);
+    line-height: 1.9;
+  }
+  .apply-left-steps {
+    display: flex; flex-direction: column; gap: 14px;
+    margin-top: 32px;
+  }
+  .apply-mini-step {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; font-weight: 300; color: rgba(255,255,255,.4);
+    letter-spacing: .1em;
+  }
+  .apply-mini-step .num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; color: var(--gold); font-weight: 300;
+    flex-shrink: 0; width: 20px;
+  }
+  .apply-left-bottom {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; letter-spacing: .18em; color: rgba(255,255,255,.2);
+    font-weight: 300;
+  }
+
+  /* Right form panel */
+  .apply-right {
+    padding: clamp(40px,7vw,80px) clamp(28px,5vw,64px);
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .apply-right-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(22px,3vw,34px); font-weight: 300; color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .apply-right-sub {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; font-weight: 300; letter-spacing: .25em; color: #8a7a6a;
+    margin-bottom: 36px;
+  }
+
+  /* Type selector */
+  .apply-type-grid {
+    display: grid; grid-template-columns: repeat(2,1fr); gap: 10px;
+    margin-bottom: 32px;
+  }
+  .apply-type-card {
+    border: 1.5px solid rgba(26,18,8,.12);
+    border-radius: 10px; padding: 14px 16px;
+    cursor: none; transition: border-color .25s, background .25s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .apply-type-card.selected {
+    border-color: var(--ink);
+    background: rgba(26,18,8,.04);
+  }
+  .apply-type-card input[type=radio] { display: none; }
+  .apply-type-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1.5px solid rgba(26,18,8,.2);
+    flex-shrink: 0; position: relative; transition: border-color .25s;
+  }
+  .apply-type-card.selected .apply-type-dot { border-color: var(--ink); }
+  .apply-type-card.selected .apply-type-dot::after {
+    content: ''; position: absolute; inset: 3px;
+    border-radius: 50%; background: var(--ink);
+  }
+  .apply-type-label {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px; font-weight: 300; letter-spacing: .15em; color: var(--ink);
+  }
+  .apply-type-sub {
+    font-size: 10px; color: #8a7a6a; margin-top: 2px; letter-spacing: .1em;
+  }
+
+  /* Form fields */
+  .apply-field { margin-bottom: 22px; }
+  .apply-label {
+    display: block;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; letter-spacing: .3em; color: #5a4a38; font-weight: 300;
+    margin-bottom: 8px;
+  }
+  .apply-label .req {
+    color: var(--col-concept); margin-left: 4px; font-size: 9px;
+  }
+  .apply-input, .apply-textarea, .apply-select {
+    width: 100%;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px; font-weight: 300; color: var(--ink);
+    background: transparent;
+    border: none; border-bottom: 1px solid rgba(26,18,8,.15);
+    padding: 10px 0;
+    outline: none;
+    transition: border-color .25s;
+    letter-spacing: .08em;
+    border-radius: 0;
+    appearance: none; -webkit-appearance: none;
+  }
+  .apply-input:focus, .apply-textarea:focus, .apply-select:focus {
+    border-bottom-color: var(--ink);
+  }
+  .apply-textarea { resize: vertical; min-height: 90px; }
+  .apply-select { cursor: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a1208' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 4px center; padding-right: 24px; }
+
+  .apply-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* Submit */
+  .apply-submit-row {
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .apply-submit-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 11px; letter-spacing: .28em; font-weight: 300;
+    padding: 14px 32px; border-radius: 40px;
+    background: var(--ink); color: #fff; border: none; cursor: none;
+    transition: background .3s, transform .3s;
+  }
+  .apply-submit-btn:hover { background: #3a2810; transform: translateY(-2px); }
+  .apply-note {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 10px; font-weight: 300; color: #8a7a6a;
+    letter-spacing: .12em; line-height: 1.8;
+  }
+
+  /* Success message */
+  .apply-success {
+    display: none;
+    text-align: center; padding: 48px 24px;
+    flex-direction: column; align-items: center; gap: 16px;
+  }
+  .apply-success.show { display: flex; }
+  .apply-success-icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(76,170,110,.12); border: 1.5px solid #4caa6e;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .apply-success-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px; font-weight: 300; color: var(--ink);
+  }
+  .apply-success-desc {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px; font-weight: 300; color: #5a4a38; line-height: 1.9;
+    letter-spacing: .1em;
+  }
+
+  @media(max-width:768px){
+    .apply-page { grid-template-columns: 1fr; }
+    .apply-left { position: static; height: auto; }
+    .apply-type-grid { grid-template-columns: 1fr; }
+    .apply-row { grid-template-columns: 1fr; }
+  }
+
 </style>
 </head>
 <body>
@@ -1302,9 +1667,10 @@
   <div class="works-slider-wrap">
     <div class="works-track" id="works-track">
 
-      <div class="works-card">
-        <div class="works-img-placeholder">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div class="works-card" style="border-top-color:#7a3a30" data-img="">
+        <div class="works-card-photo" id="photo-イベント"></div>
+        <div class="works-card-photo-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>写真を追加</span>
         </div>
         <div class="works-card-body">
@@ -1314,9 +1680,10 @@
         </div>
       </div>
 
-      <div class="works-card">
-        <div class="works-img-placeholder">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div class="works-card" style="border-top-color:#8a6020" data-img="">
+        <div class="works-card-photo" id="photo-ワークショップ"></div>
+        <div class="works-card-photo-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>写真を追加</span>
         </div>
         <div class="works-card-body">
@@ -1326,9 +1693,10 @@
         </div>
       </div>
 
-      <div class="works-card">
-        <div class="works-img-placeholder">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div class="works-card" style="border-top-color:#2d6648" data-img="">
+        <div class="works-card-photo" id="photo-連携"></div>
+        <div class="works-card-photo-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>写真を追加</span>
         </div>
         <div class="works-card-body">
@@ -1338,9 +1706,10 @@
         </div>
       </div>
 
-      <div class="works-card">
-        <div class="works-img-placeholder">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div class="works-card" style="border-top-color:#1a4a80" data-img="">
+        <div class="works-card-photo" id="photo-メディア"></div>
+        <div class="works-card-photo-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>写真を追加</span>
         </div>
         <div class="works-card-body">
@@ -1350,9 +1719,10 @@
         </div>
       </div>
 
-      <div class="works-card">
-        <div class="works-img-placeholder">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div class="works-card" style="border-top-color:#5a2a8a" data-img="">
+        <div class="works-card-photo" id="photo-診断"></div>
+        <div class="works-card-photo-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>写真を追加</span>
         </div>
         <div class="works-card-body">
@@ -1440,6 +1810,136 @@
     </div>
   </div>
 </section>
+
+<!-- ══ PARTNER SECTION ══ -->
+<section id="partner-section">
+  <div class="partner-inner">
+    <div class="partner-top">
+      <div>
+        <div class="works-ey" style="color:var(--gold)">PARTNERSHIP</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(28px,5vw,52px);font-weight:300;color:#fff;line-height:1.1;margin-bottom:16px">共創パートナー<br>募集</div>
+        <div style="width:46px;height:1px;background:var(--gold);margin-bottom:0"></div>
+      </div>
+      <div class="partner-lead">
+        Re-Paletteは、美容を通じた社会復帰支援の輪を広げるため、志を同じくするパートナーを募集しています。<br><br>
+        支援機関・美容サロン・企業それぞれの強みを活かした三者共創モデルで、ともに「自分らしく社会に出られる」社会を築きましょう。
+      </div>
+    </div>
+
+    <div class="partner-cards">
+      <!-- 支援機関 -->
+      <div class="partner-card">
+        <div class="partner-card-icon" style="background:rgba(232,92,74,.15)">
+          <svg width="26" height="26" viewBox="0 0 38 38" fill="none" stroke="#e85c4a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="26" height="22" rx="2"/><path d="M13 32V22h10v10"/><line x1="18" y1="15" x2="18" y2="21"/><line x1="15" y1="18" x2="21" y2="18"/><path d="M11 10V8a2 2 0 012-2h10a2 2 0 012 2v2"/></svg>
+        </div>
+        <div class="partner-card-title">支援機関・<br>福祉施設</div>
+        <div class="partner-card-desc">不登校・ひきこもり当事者を支援する機関・施設として、Re-Paletteのプログラムを入居者・利用者へのサービスとして導入いただけます。</div>
+        <div class="partner-card-merit">
+          <strong>提供できる価値</strong>
+          入居者の外出・社会参加機会の創出<br>
+          自己肯定感回復による生活品質の向上<br>
+          新たなサービスによる施設価値の向上
+        </div>
+      </div>
+
+      <!-- 美容学校・サロン -->
+      <div class="partner-card">
+        <div class="partner-card-icon" style="background:rgba(244,164,40,.15)">
+          <svg width="26" height="26" viewBox="0 0 38 38" fill="none" stroke="#f4a428" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="27" r="4"/><circle cx="9" cy="9" r="4"/><line x1="21" y1="7" x2="12.5" y2="11.5"/><line x1="21" y1="29" x2="12.5" y2="24.5"/><line x1="21" y1="7" x2="31" y2="19"/><line x1="21" y1="29" x2="31" y2="19"/></svg>
+        </div>
+        <div class="partner-card-title">美容学校・<br>サロン</div>
+        <div class="partner-card-desc">美容学生・新人美容師が実際の施術を通じて対人スキルを磨ける場を提供。福祉美容の実践経験と認定資格の取得につながります。</div>
+        <div class="partner-card-merit">
+          <strong>提供できる価値</strong>
+          社会貢献活動による学校・サロンのブランド向上<br>
+          学生・スタッフの実践スキル・対人能力の育成<br>
+          福祉美容対人スキル認定資格の取得支援
+        </div>
+      </div>
+
+      <!-- 学生パートナー -->
+      <div class="partner-card">
+        <div class="partner-card-icon" style="background:rgba(217,79,138,.15)">
+          <svg width="26" height="26" viewBox="0 0 38 38" fill="none" stroke="#d94f8a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="11" r="6"/><path d="M7 34c0-6.627 5.373-12 12-12s12 5.373 12 12"/><path d="M14 20l5 5 5-5"/></svg>
+        </div>
+        <div class="partner-card-title">学生<br>パートナー</div>
+        <div class="partner-card-desc">美容系・社会福祉系・医療系など幅広い学生を募集。Re-Paletteの活動に参加しながら、社会課題解決のリアルな現場を経験できます。</div>
+        <div class="partner-card-merit">
+          <strong>得られる経験</strong>
+          福祉×美容の現場での実践スキル習得<br>
+          ソーシャルエンタープライズの運営経験<br>
+          活動実績として履歴書・ポートフォリオに記載可
+        </div>
+      </div>
+
+      <!-- スポンサー企業 -->
+      <div class="partner-card">
+        <div class="partner-card-icon" style="background:rgba(59,143,224,.15)">
+          <svg width="26" height="26" viewBox="0 0 38 38" fill="none" stroke="#3b8fe0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="28" height="20" rx="2"/><path d="M13 12V9a2 2 0 012-2h6a2 2 0 012 2v3"/><line x1="4" y1="22" x2="32" y2="22"/></svg>
+        </div>
+        <div class="partner-card-title">スポンサー<br>企業</div>
+        <div class="partner-card-desc">CSR・社会的インパクト投資として、Re-Paletteの活動を資金・物資・ノウハウ面でサポートいただけます。SDGs達成への貢献を可視化します。</div>
+        <div class="partner-card-merit">
+          <strong>提供できる価値</strong>
+          SDGsへの具体的な貢献と対外PRへの活用<br>
+          社会課題解決に取り組む企業イメージの向上<br>
+          活動レポート・ロゴ掲載等でのブランド露出
+        </div>
+      </div>
+    </div>
+
+    <!-- 審査フロー -->
+    <div class="partner-screening">
+      <div class="screening-title">パートナー審査の流れ</div>
+      <div class="screening-sub">APPLICATION PROCESS</div>
+      <div class="screening-steps">
+        <div class="screening-step">
+          <div class="step-num">01</div>
+          <span class="step-badge" style="background:rgba(201,165,90,.35)">まずここから</span>
+          <div class="step-title">応募・お問い合わせ</div>
+          <div class="step-desc">メールまたはInstagramのDMにて、団体名・お名前・応募の背景をご送付ください。</div>
+        </div>
+        <div class="screening-step">
+          <div class="step-num">02</div>
+          <span class="step-badge" style="background:rgba(59,143,224,.35)">1週間以内</span>
+          <div class="step-title">書類確認・返信</div>
+          <div class="step-desc">内容を確認のうえ、1週間以内に担当者よりご連絡いたします。</div>
+        </div>
+        <div class="screening-step">
+          <div class="step-num">03</div>
+          <span class="step-badge" style="background:rgba(76,170,110,.35)">オンライン可</span>
+          <div class="step-title">面談・ヒアリング</div>
+          <div class="step-desc">代表とのオンラインまたは対面面談にて、活動内容・連携方法をすり合わせます。</div>
+        </div>
+        <div class="screening-step">
+          <div class="step-num">04</div>
+          <span class="step-badge" style="background:rgba(247,202,47,.35)">実地体験</span>
+          <div class="step-title">体験研修</div>
+          <div class="step-desc">実際のイベントにスタッフとして参加。現場の雰囲気・役割を体験したうえで正式連携を判断します。</div>
+        </div>
+        <div class="screening-step">
+          <div class="step-num">05</div>
+          <span class="step-badge" style="background:rgba(217,79,138,.35)">正式決定</span>
+          <div class="step-title">パートナー締結</div>
+          <div class="step-desc">双方合意のうえ、パートナー協定を締結。活動開始となります。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="partner-cta">
+      <button class="partner-cta-btn primary" id="open-apply-btn" onclick="document.getElementById('apply-overlay').classList.add('open')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        パートナーとして応募する
+      </button>
+      <a class="partner-cta-btn secondary" href="https://www.instagram.com/repalette_official/" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+        Instagramをフォロー
+      </a>
+    </div>
+  </div>
+</section>
+
 <!-- ══ BIG FOOTER NAV (NTV-art style) ══ -->
 <div id="big-footer">
   <div class="bft-inner">
@@ -1682,7 +2182,7 @@ function makeTube(sec) {
   const label = document.createElement('div');
   label.className = 'tube-label';
   label.textContent = sec.label;
-  label.style.setProperty('--tube-color', sec.color);
+
   wrap.appendChild(body);
   wrap.appendChild(label);
   wrap.addEventListener('mouseenter', () => { setCursorHover(true); spawnSplash(sec.color, 6); });
@@ -2059,6 +2559,26 @@ window.addEventListener('load', () => {
   }, 2200);
 });
 
+// ── WORKS CARD PHOTO LOADER ──────────────────
+// To add a photo: set data-img="https://your-photo-url.jpg" on the .works-card div
+// Example: <div class="works-card" data-img="https://example.com/photo.jpg" ...>
+(function() {
+  document.querySelectorAll('.works-card[data-img]').forEach(card => {
+    const url = card.getAttribute('data-img');
+    const photoDiv = card.querySelector('.works-card-photo');
+    const placeholder = card.querySelector('.works-card-photo-placeholder');
+    if (url && url.trim() !== '' && photoDiv) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = card.querySelector('.works-card-title')?.textContent || '';
+      img.loading = 'lazy';
+      photoDiv.appendChild(img);
+      photoDiv.classList.add('has-img');
+      if (placeholder) placeholder.style.display = 'none';
+    }
+  });
+})();
+
 // ── WORKS SLIDER (infinite loop) ──────────────────
 (function(){
   const track = document.getElementById('works-track');
@@ -2187,6 +2707,180 @@ window.addEventListener('scroll', () => {
     tn.style.boxShadow = '';
   }
 }, { passive: true });
+// ── APPLY FORM ──────────────────
+function selectType(label) {
+  document.querySelectorAll('.apply-type-card').forEach(function(el){ el.classList.remove('selected'); });
+  label.classList.add('selected');
+  label.querySelector('input[type=radio]').checked = true;
+}
+
+function submitApply() {
+  var name   = document.getElementById('f-name').value.trim();
+  var org    = document.getElementById('f-org').value.trim();
+  var email  = document.getElementById('f-email').value.trim();
+  var reason = document.getElementById('f-reason').value.trim();
+  var tel    = document.getElementById('f-tel').value.trim();
+  var q      = document.getElementById('f-question').value.trim();
+  var ptype  = (document.querySelector('input[name=ptype]:checked') || {}).value || '';
+
+  if (!name || !org || !email || !reason) {
+    alert('お名前・所属・メールアドレス・応募動機は必須項目です。');
+    return;
+  }
+
+  var subject = encodeURIComponent('Re-Palette 共創パートナー応募【' + ptype + '】');
+  var body = encodeURIComponent(
+    '【応募区分】' + ptype + '\n' +
+    '【お名前】' + name + '\n' +
+    '【所属・団体名】' + org + '\n' +
+    '【メールアドレス】' + email + '\n' +
+    '【電話番号】' + (tel || 'なし') + '\n\n' +
+    '【応募の背景・動機】\n' + reason + '\n\n' +
+    '【ご質問・その他】\n' + (q || 'なし')
+  );
+
+  window.location.href = 'mailto:mypalette1030@outlook.jp?subject=' + subject + '&body=' + body;
+
+  document.getElementById('apply-form-wrap').style.display = 'none';
+  document.getElementById('apply-success').classList.add('show');
+}
+
+// Apply overlay ESC close
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var ov = document.getElementById('apply-overlay');
+    if (ov) ov.classList.remove('open');
+  }
+});
+
 </script>
+
+<!-- ══ APPLY OVERLAY ══ -->
+<div id="apply-overlay">
+  <div class="apply-page">
+
+    <!-- Left info panel -->
+    <div class="apply-left">
+      <div class="apply-left-top">
+        <button class="apply-back" onclick="document.getElementById('apply-overlay').classList.remove('open')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          戻る
+        </button>
+        <div class="apply-left-ey">PARTNERSHIP APPLICATION</div>
+        <div class="apply-left-title">共創パートナー<br>応募フォーム</div>
+        <div class="apply-left-dash"></div>
+        <div class="apply-left-desc">
+          Re-Paletteへの応募ありがとうございます。<br>
+          以下のフォームにご記入ください。<br>
+          内容確認後、1週間以内にご連絡いたします。
+        </div>
+        <div class="apply-left-steps">
+          <div class="apply-mini-step"><span class="num">01</span>応募・お問い合わせ ← 今ここ</div>
+          <div class="apply-mini-step"><span class="num">02</span>書類確認・返信（1週間以内）</div>
+          <div class="apply-mini-step"><span class="num">03</span>面談・ヒアリング</div>
+          <div class="apply-mini-step"><span class="num">04</span>体験研修（イベントスタッフ）</div>
+          <div class="apply-mini-step"><span class="num">05</span>パートナー締結</div>
+        </div>
+      </div>
+      <div class="apply-left-bottom">© 2025 Re-Palette</div>
+    </div>
+
+    <!-- Right form -->
+    <div class="apply-right">
+      <div class="apply-right-title">応募フォーム</div>
+      <div class="apply-right-sub">APPLICATION FORM</div>
+
+      <div id="apply-form-wrap">
+        <!-- Partner type -->
+        <div class="apply-field">
+          <label class="apply-label">応募区分 <span class="req">必須</span></label>
+          <div class="apply-type-grid" id="type-grid">
+            <label class="apply-type-card selected" onclick="selectType(this)">
+              <input type="radio" name="ptype" value="支援機関・福祉施設" checked>
+              <div class="apply-type-dot"></div>
+              <div><div class="apply-type-label">支援機関・福祉施設</div><div class="apply-type-sub">医療・福祉・支援団体</div></div>
+            </label>
+            <label class="apply-type-card" onclick="selectType(this)">
+              <input type="radio" name="ptype" value="美容学校・サロン">
+              <div class="apply-type-dot"></div>
+              <div><div class="apply-type-label">美容学校・サロン</div><div class="apply-type-sub">美容教育・サロン事業者</div></div>
+            </label>
+            <label class="apply-type-card" onclick="selectType(this)">
+              <input type="radio" name="ptype" value="スポンサー企業">
+              <div class="apply-type-dot"></div>
+              <div><div class="apply-type-label">スポンサー企業</div><div class="apply-type-sub">CSR・協賛・資金支援</div></div>
+            </label>
+            <label class="apply-type-card" onclick="selectType(this)">
+              <input type="radio" name="ptype" value="学生パートナー">
+              <div class="apply-type-dot"></div>
+              <div><div class="apply-type-label">学生パートナー</div><div class="apply-type-sub">学生・インターン志望</div></div>
+            </label>
+          </div>
+        </div>
+
+        <div class="apply-row">
+          <div class="apply-field">
+            <label class="apply-label">お名前 <span class="req">必須</span></label>
+            <input class="apply-input" id="f-name" type="text" placeholder="山田 花子">
+          </div>
+          <div class="apply-field">
+            <label class="apply-label">所属・団体名 <span class="req">必須</span></label>
+            <input class="apply-input" id="f-org" type="text" placeholder="〇〇大学 / 〇〇福祉施設">
+          </div>
+        </div>
+
+        <div class="apply-field">
+          <label class="apply-label">メールアドレス <span class="req">必須</span></label>
+          <input class="apply-input" id="f-email" type="email" placeholder="email@example.com">
+        </div>
+
+        <div class="apply-field">
+          <label class="apply-label">電話番号 <span class="req" style="color:#8a7a6a">任意</span></label>
+          <input class="apply-input" id="f-tel" type="tel" placeholder="090-0000-0000">
+        </div>
+
+        <div class="apply-field">
+          <label class="apply-label">応募の背景・動機 <span class="req">必須</span></label>
+          <textarea class="apply-textarea" id="f-reason" placeholder="Re-Paletteの活動に興味を持った理由や、連携したい背景をご記入ください。"></textarea>
+        </div>
+
+        <div class="apply-field">
+          <label class="apply-label">ご質問・その他</label>
+          <textarea class="apply-textarea" id="f-question" placeholder="ご不明な点や確認事項があればお気軽にどうぞ。" style="min-height:70px"></textarea>
+        </div>
+
+        <div class="apply-submit-row">
+          <button class="apply-submit-btn" onclick="submitApply()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            送信する
+          </button>
+          <div class="apply-note">
+            送信後、自動でメールが開きます。<br>
+            そのまま送信してください。
+          </div>
+        </div>
+      </div>
+
+      <!-- Success -->
+      <div class="apply-success" id="apply-success">
+        <div class="apply-success-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4caa6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="apply-success-title">ありがとうございます</div>
+        <div class="apply-success-desc">
+          メールアプリが開きましたので、<br>
+          そのまま送信をお願いいたします。<br><br>
+          確認後、1週間以内にご連絡いたします。
+        </div>
+        <button class="apply-back" style="color:#5a4a38;margin-top:16px" onclick="document.getElementById('apply-overlay').classList.remove('open');document.getElementById('apply-form-wrap').style.display='';document.getElementById('apply-success').classList.remove('show')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          ページに戻る
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
