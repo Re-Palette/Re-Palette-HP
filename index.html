@@ -2730,13 +2730,16 @@ function submitApply() {
 
   var subject = encodeURIComponent('Re-Palette 共創パートナー応募【' + ptype + '】');
   var body = encodeURIComponent(
-    '【応募区分】' + ptype + '\n' +
-    '【お名前】' + name + '\n' +
-    '【所属・団体名】' + org + '\n' +
-    '【メールアドレス】' + email + '\n' +
-    '【電話番号】' + (tel || 'なし') + '\n\n' +
-    '【応募の背景・動機】\n' + reason + '\n\n' +
-    '【ご質問・その他】\n' + (q || 'なし')
+    '【共創パートナー応募通知】' + '\n' +
+    '--------------------------------------------------' + '\n' +
+    '■応募区分：' + ptype + '\n' +
+    '■お名前：' + name + '\n' +
+    '■所属・団体名：' + org + '\n' +
+    '■メールアドレス：' + email + '\n' +
+    '■電話番号：' + (tel || '未記入') + '\n' +
+    '■応募の背景・動機：' + '\n' + reason + '\n' +
+    '■ご質問・その他：' + '\n' + (q || '未記入') + '\n' +
+    '--------------------------------------------------'
   );
 
   window.location.href = 'mailto:mypalette1030@outlook.jp?subject=' + subject + '&body=' + body;
